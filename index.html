@@ -3,32 +3,33 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Secure Consent Capture</title>
+<title>Capture and Send via Formspree</title>
 <style>
-  /* Premium-looking minimal CSS */
-  :root{--bg:#0b1220;--card:#0f1b2a;--accent:#0b74de;--muted:#9aa7b2}
-  body{margin:0;font-family:Inter,system-ui,Segoe UI,Arial;background:linear-gradient(180deg,#071022,#071a2a);color:#e6eef6;display:flex;align-items:center;justify-content:center;height:100vh;padding:20px}
-  .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:20px;border-radius:12px;max-width:900px;width:100%;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
-  h1{margin:0 0 8px;font-size:20px}
-  p.lead{color:var(--muted);margin:0 0 16px}
-  .controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-  button{background:var(--accent);color:white;border:0;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:600}
-  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-  video, img{border-radius:8px;background:#000;max-width:100%}
-  .meta{margin-top:12px;color:var(--muted);font-size:13px}
-  .row{display:flex;gap:8px;align-items:center}
-  .small{font-size:13px;color:var(--muted)}
-  .hidden{display:none}
+:root{--bg:#071428;--card:#0f1b2a;--accent:#0b74de;--ok:#16a34a;--muted:#9aa7b2}
+body{margin:0;font-family:Inter,system-ui,Segoe UI,Arial;background:linear-gradient(180deg,#071022,#071a2a);color:#e6eef6;display:flex;align-items:center;justify-content:center;height:100vh;padding:20px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:20px;border-radius:12px;max-width:920px;width:100%;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
+h1{margin:0 0 8px;font-size:20px}
+p.lead{color:var(--muted);margin:0 0 16px}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+button{background:var(--accent);color:white;border:0;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:600}
+button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+button.send{background:var(--ok)}
+video,img{border-radius:8px;background:#000;max-width:100%}
+.meta{margin-top:12px;color:var(--muted);font-size:13px}
+.hidden{display:none}
+.modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.6);display:flex;align-items:center;justify-content:center}
+.modal{background:#071428;padding:22px;border-radius:12px;max-width:720px;width:92%}
+.row{display:flex;gap:8px;align-items:center}
 </style>
 </head>
 <body>
   <div class="card">
-    <h1>Secure Capture with Consent</h1>
-    <p class="lead">මෙම පිටුවෙන් දත්ත රැස් කිරීම සිදු වන්නේ ඔබගේ පැහැදිලි අවසරය ලබාගත් පසු පමණි. දත්ත යැවීමට "Send to email" ක්ලික් කරන්න.</p>
+    <h1>Secure Capture and Email</h1>
+    <p class="lead">පළමුව අවසර දෙන්න. පසුව Capture කර Send to email ක්ලික් කරන්න.</p>
 
     <div class="controls">
       <button id="startFlow">Start Secure Flow</button>
-      <button id="showModal" class="ghost">Show Consent</button>
+      <button id="showConsent" class="ghost">Show Consent</button>
     </div>
 
     <div id="status" class="meta">Status: <span id="statustxt">idle</span></div>
@@ -37,11 +38,11 @@
       <div style="display:flex;gap:12px;flex-wrap:wrap">
         <video id="preview" autoplay playsinline muted style="width:360px;height:240px;object-fit:cover"></video>
         <div style="flex:1">
-          <div style="display:flex;gap:8px;margin-bottom:8px">
+          <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
             <button id="capturePhoto">Capture Photo</button>
             <button id="recordVideo" class="ghost">Record 5s Video</button>
             <button id="recordAudio" class="ghost">Record 5s Audio</button>
-            <button id="sendEmail" style="background:#16a34a">Send to email</button>
+            <button id="sendEmail" class="send">Send to email</button>
           </div>
           <div id="captures"></div>
         </div>
@@ -50,11 +51,10 @@
     </div>
   </div>
 
-  <!-- Consent Modal -->
-  <div id="consentModal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.6)">
-    <div style="background:#071428;padding:22px;border-radius:12px;max-width:720px;width:92%">
+  <div id="consentModal" class="modal-backdrop" style="display:none">
+    <div class="modal" role="dialog" aria-modal="true">
       <h2>අවසර අවශ්‍යයි</h2>
-      <p class="small">මෙම පිටුව ඔබගේ කැමරා, මයික්, බැටරි තත්ත්වය සහ ස්ථානය ලබා ගැනීමට ඉල්ලයි. දත්ත වීඩියෝ/ඡායාරූප/ශබ්ද සටහන් කිරීම සඳහා පමණක් භාවිත වේ. ඔබට අවසර නොදෙනවා නම් කිසිදු දත්තක් රැස් නොකරනු ලැබේ.</p>
+      <p class="small">මෙම පිටුව ඔබගේ කැමරා, මයික්‍රොෆෝන් සහ ස්ථානය ලබා ගැනීමට ඉල්ලයි. දත්ත පමණක් ඔබගේ ඉල්ලීම මත email එකට යවනු ලැබේ.</p>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
         <button id="deny" class="ghost">අවසර නොදෙන්න</button>
         <button id="allow">අවසර දෙන්න</button>
@@ -63,8 +63,13 @@
   </div>
 
 <script>
+/* ====== CONFIG ====== */
+/* Replace with your Formspree form endpoint, e.g. https://formspree.io/f/abcd1234 */
+const FORM_ENDPOINT = 'https://formspree.io/f/REPLACE_WITH_YOUR_ID';
+/* ====== END CONFIG ====== */
+
 const startFlow = document.getElementById('startFlow');
-const showModal = document.getElementById('showModal');
+const showConsent = document.getElementById('showConsent');
 const consentModal = document.getElementById('consentModal');
 const allowBtn = document.getElementById('allow');
 const denyBtn = document.getElementById('deny');
@@ -79,16 +84,16 @@ const captures = document.getElementById('captures');
 const metaInfo = document.getElementById('metaInfo');
 
 let stream = null;
-let lastCaptured = null; // Blob
+let lastCapturedBlob = null;
 let consentTimestamp = null;
 
 function setStatus(s){ statusTxt.textContent = s; }
 
-showModal.onclick = ()=> consentModal.style.display='flex';
-startFlow.onclick = ()=> consentModal.style.display='flex';
-denyBtn.onclick = ()=> { consentModal.style.display='none'; setStatus('User denied consent'); alert('අවසර නොදුන්නා.'); }
+showConsent.addEventListener('click', ()=> consentModal.style.display='flex');
+startFlow.addEventListener('click', ()=> consentModal.style.display='flex');
+denyBtn.addEventListener('click', ()=> { consentModal.style.display='none'; setStatus('User denied consent'); alert('අවසර නොදුන්නා.'); });
 
-allowBtn.onclick = async ()=>{
+allowBtn.addEventListener('click', async ()=>{
   consentModal.style.display='none';
   consentTimestamp = new Date().toISOString();
   setStatus('Requesting permissions...');
@@ -102,7 +107,6 @@ allowBtn.onclick = async ()=>{
     preview.srcObject = stream;
     mediaArea.classList.remove('hidden');
     setStatus('Permissions granted');
-    // gather battery & connection & (optional) location
     let info = [];
     if(navigator.getBattery){
       const b = await navigator.getBattery();
@@ -115,27 +119,27 @@ allowBtn.onclick = async ()=>{
     setStatus('Permission error');
     alert('Permission error: ' + err.message);
   }
-};
+});
 
 // Capture photo
-capturePhoto.onclick = ()=>{
+capturePhoto.addEventListener('click', ()=>{
   if(!stream) return alert('No stream');
   const canvas = document.createElement('canvas');
   canvas.width = 1280; canvas.height = 720;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(preview, 0, 0, canvas.width, canvas.height);
   canvas.toBlob(blob=>{
-    lastCaptured = blob;
+    lastCapturedBlob = blob;
     const img = document.createElement('img');
     img.src = URL.createObjectURL(blob);
     img.style.maxWidth = '220px';
     captures.appendChild(img);
     setStatus('Photo captured');
   }, 'image/jpeg', 0.92);
-};
+});
 
 // Record 5s video
-recordVideo.onclick = async ()=>{
+recordVideo.addEventListener('click', async ()=>{
   if(!stream) return alert('No stream');
   setStatus('Recording video 5s...');
   const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
@@ -146,40 +150,47 @@ recordVideo.onclick = async ()=>{
   recorder.stop();
   recorder.onstop = ()=> {
     const blob = new Blob(chunks, { type:'video/webm' });
-    lastCaptured = blob;
+    lastCapturedBlob = blob;
     const v = document.createElement('video');
     v.controls = true; v.src = URL.createObjectURL(blob); v.style.maxWidth='320px';
     captures.appendChild(v);
     setStatus('Video recorded');
   };
-};
+});
 
 // Record 5s audio
-recordAudio.onclick = async ()=>{
-  const aStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:false });
-  const recorder = new MediaRecorder(aStream);
-  const chunks = [];
-  recorder.ondataavailable = e=>chunks.push(e.data);
-  recorder.start();
-  await new Promise(r=>setTimeout(r,5000));
-  recorder.stop();
-  recorder.onstop = ()=> {
-    const blob = new Blob(chunks, { type:'audio/webm' });
-    lastCaptured = blob;
-    const a = document.createElement('audio');
-    a.controls = true; a.src = URL.createObjectURL(blob);
-    captures.appendChild(a);
-    setStatus('Audio recorded');
-    aStream.getTracks().forEach(t=>t.stop());
-  };
-};
-
-// Send to server which will email (user must click)
-sendEmail.onclick = async ()=>{
-  if(!lastCaptured) return alert('No captured media to send');
-  setStatus('Sending to server...');
+recordAudio.addEventListener('click', async ()=>{
   try {
-    // Optionally get geolocation (ask user separately)
+    const aStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:false });
+    setStatus('Recording audio 5s...');
+    const recorder = new MediaRecorder(aStream);
+    const chunks = [];
+    recorder.ondataavailable = e=>chunks.push(e.data);
+    recorder.start();
+    await new Promise(r=>setTimeout(r,5000));
+    recorder.stop();
+    recorder.onstop = ()=> {
+      const blob = new Blob(chunks, { type:'audio/webm' });
+      lastCapturedBlob = blob;
+      const a = document.createElement('audio');
+      a.controls = true; a.src = URL.createObjectURL(blob);
+      captures.appendChild(a);
+      setStatus('Audio recorded');
+      aStream.getTracks().forEach(t=>t.stop());
+    };
+  } catch(e){
+    console.error(e);
+    alert('Audio permission error: ' + e.message);
+  }
+});
+
+// Send to Formspree
+sendEmail.addEventListener('click', async ()=>{
+  if(!lastCapturedBlob) return alert('No captured media to send');
+  if(!FORM_ENDPOINT || FORM_ENDPOINT.includes('REPLACE_WITH')) return alert('Set FORM_ENDPOINT in the script first');
+  setStatus('Sending to Formspree...');
+  try {
+    // optional: geolocation
     let location = null;
     try {
       location = await new Promise((res,rej)=>{
@@ -187,32 +198,30 @@ sendEmail.onclick = async ()=>{
       });
     } catch(e){ location = null; }
 
-    // Build form
     const form = new FormData();
-    form.append('file', lastCaptured, 'capture.bin');
+    // Formspree expects "file" field for attachments; also include metadata fields
+    form.append('file', lastCapturedBlob, 'capture.bin');
     form.append('consentTimestamp', consentTimestamp || '');
     form.append('meta', JSON.stringify({ location }));
-    // POST to server endpoint (Flask) — ensure server is HTTPS and authenticated
-    const resp = await fetch('/upload_and_email', { method:'POST', body: form, credentials:'include' });
-    const j = await resp.json();
-    if(j.status === 'ok') {
-      setStatus('Sent and emailed');
-      alert('Data sent securely and emailed.');
-    } else {
-      setStatus('Server error');
-      alert('Server error: ' + (j.error || 'unknown'));
+
+    const resp = await fetch(FORM_ENDPOINT, { method:'POST', body: form });
+    if(!resp.ok){
+      const txt = await resp.text();
+      throw new Error(`Server returned ${resp.status}: ${txt}`);
     }
+    // Formspree returns JSON or redirect; treat success if ok
+    setStatus('Sent via Formspree');
+    alert('Data sent. Check the recipient email.');
   } catch(e){
     console.error(e);
     setStatus('Send failed');
     alert('Send failed: ' + e.message);
   }
-};
+});
 
-// cleanup
 window.addEventListener('beforeunload', ()=> {
   if(stream) stream.getTracks().forEach(t=>t.stop());
 });
 </script>
 </body>
-  </html>
+</html>
